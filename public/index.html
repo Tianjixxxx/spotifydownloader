@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Spotify Downloader - Download High Quality Music</title>
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>">
+    <meta name="description" content="Download Spotify tracks in high quality MP3 format with album art and metadata">
+    <style>
+        /* CSS Variables for Themes */
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --error: #ef4444;
+            --border: #475569;
+            --shadow: rgba(0, 0, 0, 0.3);
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --player-bg: #1e293b;
+            --player-controls: #f1f5f9;
+        }
+        
+        [data-theme="light"] {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #e2e8f0;
+            --bg-card: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --error: #ef4444;
+            --border: #cbd5e1;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --player-bg: #ffffff;
+            --player-controls: #1e293b;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            transition: all 0.3s ease;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+        
+        /* Header Styles */
+        header {
+            background: var(--bg-secondary);
+            padding: 1.5rem 0;
+            box-shadow: 0 4px 20px var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .logo-icon {
+            font-size: 2rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .theme-toggle {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .theme-toggle:hover {
+            transform: rotate(15deg);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+        
+        /* Hero Section */
+        .hero {
+            padding: 4rem 0;
+            text-align: center;
+            background: var(--bg-secondary);
+            border-radius: 0 0 2rem 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .hero h2 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+        
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+        
+        /* Input Section */
+        .input-section {
+            max-width: 800px;
+            margin: 0 auto 3rem;
+        }
+        
+        .url-input-container {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 10px 30px var(--shadow);
+            border: 1px solid var(--border);
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .url-input {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            font-size: 1rem;
+            border: 2px solid var(--border);
+            border-radius: 0.75rem;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+        
+        .url-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .url-input::placeholder {
+            color: var(--text-secondary);
+        }
+        
+        .btn {
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+        
+        .btn-primary {
+            background: var(--gradient);
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .example-url {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: var(--bg-secondary);
+            border-radius: 0.5rem;
+            border-left: 4px solid var(--accent);
+        }
+        
+        /* Result Section */
+        .result-section {
+            display: none;
+            max-width: 800px;
+            margin: 0 auto 3rem;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .track-card {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 10px 30px var(--shadow);
+            border: 1px solid var(--border);
+        }
+        
+        .track-header {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            align-items: flex-start;
+        }
+        
+        .track-artwork {
+            width: 150px;
+            height: 150px;
+            border-radius: 0.75rem;
+            object-fit: cover;
+            box-shadow: 0 8px 20px var(--shadow);
+            flex-shrink: 0;
+        }
+        
+        .track-info {
+            flex: 1;
+        }
+        
+        .track-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            line-height: 1.2;
+        }
+        
+        .track-artist {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+        
+        .track-meta {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+        
+        .download-section {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+        }
+        
+        .download-btn {
+            background: var(--success);
+            color: white;
+            width: 100%;
+            justify-content: center;
+            padding: 1.25rem;
+            font-size: 1.125rem;
+        }
+        
+        .download-btn:hover {
+            background: #0da271;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        }
+        
+        /* Audio Player */
+        .audio-player {
+            background: var(--player-bg);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            border: 1px solid var(--border);
+        }
+        
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .play-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            transition: all 0.3s ease;
+        }
+        
+        .play-btn:hover {
+            background: var(--accent-hover);
+            transform: scale(1.05);
+        }
+        
+        .progress-container {
+            flex: 1;
+            height: 6px;
+            background: var(--bg-secondary);
+            border-radius: 3px;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: var(--gradient);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+        
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+        
+        /* Tutorial Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalSlideIn 0.3s ease;
+            border: 1px solid var(--border);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .close-modal:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        
+        .tutorial-step {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .step-number {
+            width: 32px;
+            height: 32px;
+            background: var(--gradient);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        
+        .step-content h4 {
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .step-content p {
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+        }
+        
+        /* Loading Animation */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        /* Error Message */
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--error);
+            color: var(--error);
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin: 1rem 0;
+            display: none;
+            animation: shake 0.5s ease;
+        }
+        
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            border-top: 1px solid var(--border);
+            margin-top: 3rem;
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero h2 {
+                font-size: 2rem;
+            }
+            
+            .hero p {
+                font-size: 1rem;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .track-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .track-artwork {
+                width: 200px;
+                height: 200px;
+                margin: 0 auto;
+            }
+            
+            .track-meta {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+        }
+        
+        /* 120Hz Smooth Scrolling */
+        @media (prefers-reduced-motion: no-preference) {
+            * {
+                scroll-behavior: smooth;
+            }
+            
+            .btn, .theme-toggle, .play-btn {
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Tutorial Modal -->
+    <div class="modal-overlay" id="tutorialModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">How to Use Spotify Downloader</h3>
+                <button class="close-modal" id="closeModal">×</button>
+            </div>
+            <div class="tutorial-steps">
+                <div class="tutorial-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>Find a Spotify Track</h4>
+                        <p>Go to Spotify (web or app) and find the song you want to download. Copy the track URL.</p>
+                    </div>
+                </div>
+                <div class="tutorial-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Paste the URL</h4>
+                        <p>Paste the Spotify track URL into the input field above. You can use track links from Spotify web or mobile app.</p>
+                    </div>
+                </div>
+                <div class="tutorial-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>Download & Play</h4>
+                        <p>Click "Download Track" to get the MP3 file. You can also play it directly in the built-in audio player.</p>
+                    </div>
+                </div>
+                <div class="tutorial-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>Supported Formats</h4>
+                        <p>We support individual track downloads in high-quality MP3 format with metadata and album art.</p>
+                    </div>
+                </div>
+            </div>
+            <button class="btn btn-primary" id="gotItBtn" style="width: 100%; margin-top: 1rem;">
+                Got it, let's start!
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Layout -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">🎵</span>
+                    <h1>Spotify Downloader</h1>
+                </div>
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                    <span id="themeIcon">🌙</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h2>Download Spotify Tracks Instantly</h2>
+                <p>High-quality MP3 downloads with album art and metadata. No registration required.</p>
+            </div>
+        </section>
+
+        <div class="container">
+            <!-- Input Section -->
+            <section class="input-section">
+                <div class="url-input-container">
+                    <div class="input-group">
+                        <input 
+                            type="url" 
+                            id="spotifyUrl" 
+                            class="url-input" 
+                            placeholder="Paste Spotify track URL here..." 
+                            autocomplete="off"
+                            spellcheck="false"
+                        >
+                        <button id="downloadBtn" class="btn btn-primary">
+                            <span>Download Track</span>
+                        </button>
+                    </div>
+                    <div class="example-url">
+                        <strong>Example:</strong> https://open.spotify.com/xxxx
+                    </div>
+                </div>
+            </section>
+
+            <!-- Loading State -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Fetching track information...</p>
+            </div>
+
+            <!-- Error Message -->
+            <div class="error-message" id="errorMessage"></div>
+
+            <!-- Result Section -->
+            <section class="result-section" id="resultSection">
+                <div class="track-card">
+                    <div class="track-header">
+                        <img id="trackArtwork" class="track-artwork" alt="Track artwork">
+                        <div class="track-info">
+                            <h3 id="trackTitle" class="track-title"></h3>
+                            <p id="trackArtist" class="track-artist"></p>
+                            <div class="track-meta">
+                                <span class="meta-item">
+                                    <span>🎵</span>
+                                    <span>Spotify Track</span>
+                                </span>
+                                <span class="meta-item">
+                                    <span>💾</span>
+                                    <span>MP3 Format</span>
+                                </span>
+                                <span class="meta-item">
+                                    <span>⭐</span>
+                                    <span>High Quality</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Audio Player -->
+                    <div class="audio-player" id="audioPlayer">
+                        <div class="player-controls">
+                            <button class="play-btn" id="playBtn">▶</button>
+                            <div class="progress-container" id="progressContainer">
+                                <div class="progress-bar" id="progressBar"></div>
+                            </div>
+                        </div>
+                        <div class="time-display">
+                            <span id="currentTime">0:00</span>
+                            <span id="duration">0:00</span>
+                        </div>
+                        <audio id="audioElement" preload="metadata"></audio>
+                    </div>
+                    
+                    <div class="download-section">
+                        <button id="directDownloadBtn" class="btn download-btn">
+                            <span>⬇</span>
+                            <span>Download MP3 File</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>Spotify Downloader &copy; 2026 | For educational purposes only</p>
+            <p>Respect artists' work and download only content you own</p>
+            <p style="margin-top: 1rem; font-size: 0.75rem; opacity: 0.7;">
+                Note: This tool uses a third-party API to fetch Spotify track information.
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Theme Management
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const htmlElement = document.documentElement;
+
+        // Load saved theme or default to dark
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        htmlElement.setAttribute('data-theme', savedTheme);
+        themeIcon.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = htmlElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            htmlElement.setAttribute('data-theme', newTheme);
+            themeIcon.textContent = newTheme === 'dark' ? '🌙' : '☀️';
+            localStorage.setItem('theme', newTheme);
+        });
+
+        // Tutorial Modal
+        const tutorialModal = document.getElementById('tutorialModal');
+        const closeModal = document.getElementById('closeModal');
+        const gotItBtn = document.getElementById('gotItBtn');
+
+        // Show tutorial on first visit
+        if (!localStorage.getItem('tutorialShown')) {
+            setTimeout(() => {
+                tutorialModal.style.display = 'flex';
+            }, 500);
+            localStorage.setItem('tutorialShown', 'true');
+        }
+
+        closeModal.addEventListener('click', () => {
+            tutorialModal.style.display = 'none';
+        });
+
+        gotItBtn.addEventListener('click', () => {
+            tutorialModal.style.display = 'none';
+        });
+
+        // Close modal when clicking outside
+        tutorialModal.addEventListener('click', (e) => {
+            if (e.target === tutorialModal) {
+                tutorialModal.style.display = 'none';
+            }
+        });
+
+        // Spotify Download Functionality
+        const spotifyUrlInput = document.getElementById('spotifyUrl');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const loadingElement = document.getElementById('loading');
+        const errorMessage = document.getElementById('errorMessage');
+        const resultSection = document.getElementById('resultSection');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const directDownloadBtn = document.getElementById('directDownloadBtn');
+
+        // Audio Player Elements
+        const audioElement = document.getElementById('audioElement');
+        const playBtn = document.getElementById('playBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progressContainer = document.getElementById('progressContainer');
+        const currentTimeElement = document.getElementById('currentTime');
+        const durationElement = document.getElementById('duration');
+
+        // Audio Player Functions
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function updateProgress() {
+            const { currentTime, duration } = audioElement;
+            const progressPercent = (currentTime / duration) * 100;
+            progressBar.style.width = `${progressPercent}%`;
+            currentTimeElement.textContent = formatTime(currentTime);
+        }
+
+        function setProgress(e) {
+            const width = this.clientWidth;
+            const clickX = e.offsetX;
+            const duration = audioElement.duration;
+            audioElement.currentTime = (clickX / width) * duration;
+        }
+
+        // Audio Player Event Listeners
+        audioElement.addEventListener('loadedmetadata', () => {
+            durationElement.textContent = formatTime(audioElement.duration);
+        });
+
+        audioElement.addEventListener('timeupdate', updateProgress);
+
+        audioElement.addEventListener('ended', () => {
+            playBtn.textContent = '▶';
+            audioElement.currentTime = 0;
+            updateProgress();
+        });
+
+        playBtn.addEventListener('click', () => {
+            if (audioElement.paused) {
+                audioElement.play();
+                playBtn.textContent = '⏸';
+            } else {
+                audioElement.pause();
+                playBtn.textContent = '▶';
+            }
+        });
+
+        progressContainer.addEventListener('click', setProgress);
+
+        // Download Functionality
+        async function downloadSpotifyTrack() {
+            const url = spotifyUrlInput.value.trim();
+            
+            if (!url) {
+                showError('Please enter a Spotify URL');
+                return;
+            }
+
+            // Validate Spotify URL
+            if (!url.includes('open.spotify.com/track/')) {
+                showError('Please enter a valid Spotify track URL');
+                return;
+            }
+
+            // Show loading, hide other elements
+            loadingElement.style.display = 'block';
+            resultSection.style.display = 'none';
+            errorMessage.style.display = 'none';
+            downloadBtn.disabled = true;
+
+            try {
+                // Clean the URL - remove query parameters
+                const cleanUrl = url.split('?')[0];
+                
+                // Fetch track data from our backend API
+                const response = await fetch(`/api/download?url=${encodeURIComponent(cleanUrl)}`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to fetch track data');
+                }
+
+                // Update UI with track data
+                document.getElementById('trackTitle').textContent = data.data.title;
+                document.getElementById('trackArtist').textContent = data.data.artist;
+                document.getElementById('trackArtwork').src = data.data.thumbnail;
+
+                // Set up audio player
+                audioElement.src = data.download;
+                audioPlayer.style.display = 'block';
+
+                // Set up download button
+                directDownloadBtn.onclick = () => {
+                    // Create a temporary link to trigger download
+                    const link = document.createElement('a');
+                    link.href = data.download;
+                    link.download = `${data.data.title} - ${data.data.artist}.mp3`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                };
+
+                // Show result section
+                resultSection.style.display = 'block';
+                loadingElement.style.display = 'none';
+
+                // Scroll to results
+                resultSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            } catch (error) {
+                console.error('Download error:', error);
+                showError(error.message || 'An error occurred. Please try again.');
+                loadingElement.style.display = 'none';
+            } finally {
+                downloadBtn.disabled = false;
+            }
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            errorMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            // Auto-hide error after 5 seconds
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        // Event Listeners
+        downloadBtn.addEventListener('click', downloadSpotifyTrack);
+
+        spotifyUrlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                downloadSpotifyTrack();
+            }
+        });
+
+        // Paste event to clean URL
+        spotifyUrlInput.addEventListener('paste', (e) => {
+            setTimeout(() => {
+                let value = spotifyUrlInput.value;
+                // Remove query parameters
+                if (value.includes('?')) {
+                    value = value.split('?')[0];
+                    spotifyUrlInput.value = value;
+                }
+            }, 10);
+        });
+
+        // Focus on input when page loads
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                spotifyUrlInput.focus();
+            }, 100);
+        });
+
+        // Smooth animations for 120Hz
+        if (window.matchMedia('(min-width: 60Hz)').matches) {
+            document.documentElement.style.setProperty('--animation-speed', '0.008s');
+        }
+    </script>
+</body>
+</html>
